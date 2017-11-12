@@ -3,7 +3,7 @@
  *
  * Best Answer. An extension for the phpBB Forum Software package.
  *
- * @copyright (c) 2017, kinerity
+ * @copyright (c) 2017, kinerity, https://www.layer-3.org
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */
@@ -15,28 +15,28 @@ namespace kinerity\bestanswer\controller;
  */
 class main_controller
 {
-	/** @var \phpbb\auth\auth */
+	/* @var \phpbb\auth\auth */
 	protected $auth;
 
-	/** @var \phpbb\db\driver\driver_interface */
+	/* @var \phpbb\db\driver\driver_interface */
 	protected $db;
 
-	/** @var \phpbb\language\language */
+	/* @var \phpbb\language\language */
 	protected $lang;
 
-	/** @var \phpbb\log\log */
+	/* @var \phpbb\log\log */
 	protected $log;
 
-	/** @var \phpbb\request\request */
+	/* @var \phpbb\request\request */
 	protected $request;
 
-	/** @var \phpbb\user */
+	/* @var \phpbb\user */
 	protected $user;
 
-	/** @var string phpbb_root_path */
+	/* @var string phpbb_root_path */
 	protected $root_path;
 
-	/** @var string phpEx */
+	/* @var string phpEx */
 	protected $php_ext;
 
 	/**
@@ -91,34 +91,17 @@ class main_controller
 		$topic_data = $this->db->sql_fetchrow($result);
 		$this->db->sql_freeresult($result);
 
-		// Validate all checks and throw errors
-		if (!$topic_data['enable_bestanswer'])
-		{
-			throw new \phpbb\exception\http_exception(403, $this->lang->lang('NOT_AUTHORISED'));
-		}
-		if ($topic_data['topic_first_post_id'] == (int) $post_id)
-		{
-			throw new \phpbb\exception\http_exception(404, $this->lang->lang('TOPIC_FIRST_POST'));
-		}
-		if (!$this->auth->acl_get('m_mark_bestanswer', (int) $topic_data['forum_id']) && (!$this->auth->acl_get('f_mark_bestanswer', (int) $topic_data['forum_id']) && $topic_data['topic_poster'] != $this->user->data['user_id']))
-		{
-			throw new \phpbb\exception\http_exception(403, $this->lang->lang('NOT_AUTHORISED'));
-		}
-		if ($topic_data['topic_status'] == ITEM_LOCKED && !$this->auth->acl_get('m_mark_bestanswer', (int) $topic_data['forum_id']))
-		{
-			throw new \phpbb\exception\http_exception(403, $this->lang->lang('NOT_AUTHORISED'));
-		}
 
-		$log_var = $this->auth->acl_get('m_mark_bestanswer', $topic_data['forum_id']) ? 'mod' : 'user';
+		$log_var = $this->auth->acl_get('m_mark_answer', $topic_data['forum_id']) ? 'mod' : 'user';
 
-		// OK, either mark or unmark answers
+		// Mark or unmark answers
 		if (confirm_box(true))
 		{
 			if ($action == 'unmark_answer')
 			{
 				$data = array(
-					'bestanswer_id'			=> 0,
-					'bestanswer_user_id'	=> 0,
+					'answer_post_id'	=> 0,
+					'answer_user_id'	=> 0,
 				);
 
 				$sql = 'UPDATE ' . TOPICS_TABLE . ' SET ' . $this->db->sql_build_array('UPDATE', $data) . ' WHERE topic_id = ' . (int) $topic_data['topic_id'];
@@ -135,12 +118,12 @@ class main_controller
 
 			if ($action == 'mark_answer')
 			{
-				// If a best answer is already set, we need to update the user's answer count first
-				if ($topic_data['bestanswer_id'])
+				// If an answer is already set, we need to update the user's answer count first
+				if ($topic_data['answer_post_id'])
 				{
 					$sql = 'SELECT p.*, u.user_id, u.username, u.user_colour
 						FROM ' . POSTS_TABLE . ' p, ' . USERS_TABLE . ' u
-						WHERE p.post_id = ' . (int) $topic_data['bestanswer_id'] . '
+						WHERE p.post_id = ' . (int) $topic_data['answer_post_id'] . '
 							AND p.poster_id = u.user_id';
 					$result = $this->db->sql_query($sql);
 					$row = $this->db->sql_fetchrow($result);
@@ -157,8 +140,8 @@ class main_controller
 
 				// Now, update all data
 				$data = array(
-					'bestanswer_id'			=> (int) $post_id,
-					'bestanswer_user_id'	=> (int) $topic_data['user_id'],
+					'answer_post_id'	=> (int) $post_id,
+					'answer_user_id'	=> (int) $topic_data['user_id'],
 				);
 
 				$sql = 'UPDATE ' . TOPICS_TABLE . ' SET ' . $this->db->sql_build_array('UPDATE', $data) . ' WHERE topic_id = ' . (int) $topic_data['topic_id'];

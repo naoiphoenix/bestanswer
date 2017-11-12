@@ -3,7 +3,7 @@
  *
  * Best Answer. An extension for the phpBB Forum Software package.
  *
- * @copyright (c) 2017, kinerity
+ * @copyright (c) 2017, kinerity, https://www.layer-3.org
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */
@@ -40,8 +40,8 @@ $lang = array_merge($lang, array(
 	'BUTTON_MARK'	=> 'Mark answer',
 	'BUTTON_UNMARK'	=> 'Unmark answer',
 
-	'ENABLE_BESTANSWER'			=> 'Enable best answer',
-	'ENABLE_BESTANSWER_EXPLAIN'	=> 'If enabled, the topic starter (if permitted) and moderators (where allowed) will be able to mark a topic reply as the best answer.',
+	'ENABLE_BEST_ANSWER'			=> 'Enable best answer',
+	'ENABLE_BEST_ANSWER_EXPLAIN'	=> 'If enabled, the topic starter (if permitted) and moderators (where allowed) will be able to mark a topic reply as the best answer.',
 
 	'FULL_POST'	=> 'GO TO FULL POST',
 
@@ -55,7 +55,6 @@ $lang = array_merge($lang, array(
 
 	'SEARCH_USER_ANSWERS'	=> 'Search user’s answers',
 
-	'TOPIC_FIRST_POST'	=> 'You cannot mark this post as the best answer as it is the first post of the topic.',
 	'TOTAL_ANSWERES'	=> 'Total answers',
 
 	'UNMARK_ANSWER'			=> 'Unmark post as best answer',

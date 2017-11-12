@@ -3,7 +3,7 @@
  *
  * Best Answer. An extension for the phpBB Forum Software package.
  *
- * @copyright (c) 2017, kinerity
+ * @copyright (c) 2017, kinerity, https://www.layer-3.org
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */
@@ -32,6 +32,6 @@ class ext extends \phpbb\extension\base
 	{
 		$config = $this->container->get('config');
 
-		return phpbb_version_compare($config['version'], '3.2.0', '>=') && version_compare(PHP_VERSION, '5.4.0', '>=');
+		return phpbb_version_compare($config['version'], '3.2.2', '>=') && version_compare(PHP_VERSION, '5.4.0', '>=');
 	}
 }

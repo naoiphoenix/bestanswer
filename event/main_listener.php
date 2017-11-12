@@ -3,7 +3,7 @@
  *
  * Best Answer. An extension for the phpBB Forum Software package.
  *
- * @copyright (c) 2017, kinerity
+ * @copyright (c) 2017, kinerity, https://www.layer-3.org
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */
@@ -18,36 +18,36 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 /**
  * Best Answer Event listener.
  */
-class listener implements EventSubscriberInterface
+class main_listener implements EventSubscriberInterface
 {
-	/** @var \phpbb\auth\auth */
+	/* @var \phpbb\auth\auth */
 	protected $auth;
 
-	/** @var \phpbb\db\driver\driver_interface */
+	/* @var \phpbb\db\driver\driver_interface */
 	protected $db;
 
-	/** @var \phpbb\controller\helper */
+	/* @var \phpbb\controller\helper */
 	protected $helper;
 
-	/** @var \phpbb\language\language */
+	/* @var \phpbb\language\language */
 	protected $lang;
 
-	/** @var \phpbb\request\request */
+	/* @var \phpbb\request\request */
 	protected $request;
 
-	/** @var \phpbb\template\template */
+	/* @var \phpbb\template\template */
 	protected $template;
 
-	/** @var \phpbb\user */
+	/* @var \phpbb\user */
 	protected $user;
 
-	/** @var string phpbb_root_path */
+	/* @var string phpbb_root_path */
 	protected $root_path;
 
-	/** @var string phpEx */
+	/* @var string phpEx */
 	protected $php_ext;
 
-	/** @var array answer */
+	/* @var array answer */
 	private $answer = array();
 
 	/**
@@ -98,6 +98,7 @@ class listener implements EventSubscriberInterface
 
 			'core.mcp_change_poster_after'			=> 'mcp_change_poster_after',
 			'core.mcp_topic_modify_post_data'		=> 'mcp_topic_modify_post_data',
+			'core.mcp_topic_review_modify_row'		=> 'mcp_topic_review_modify_row',
 			'core.mcp_view_forum_modify_topicrow'	=> 'mcp_view_forum_modify_topicrow',
 			'core.memberlist_view_profile'			=> 'memberlist_view_profile',
 
@@ -119,7 +120,7 @@ class listener implements EventSubscriberInterface
 	public function acp_manage_forums_display_form($event)
 	{
 		$template_data = $event['template_data'];
-		$template_data['S_ENABLE_BESTANSWER'] = $event['forum_data']['enable_bestanswer'];
+		$template_data['S_BEST_ANSWER'] = $event['forum_data']['enable_answer'];
 		$event['template_data'] = $template_data;
 	}
 
@@ -129,7 +130,7 @@ class listener implements EventSubscriberInterface
 		{
 			$forum_data = $event['forum_data'];
 			$forum_data = array_merge($forum_data, array(
-				'enable_bestanswer'	=> false,
+				'enable_answer'	=> false,
 			));
 			$event['forum_data'] = $forum_data;
 		}
@@ -138,7 +139,7 @@ class listener implements EventSubscriberInterface
 	public function acp_manage_forums_request_data($event)
 	{
 		$forum_data = $event['forum_data'];
-		$forum_data['enable_bestanswer'] = $this->request->variable('enable_bestanswer', 0);
+		$forum_data['enable_answer'] = $this->request->variable('enable_answer', 0);
 		$event['forum_data'] = $forum_data;
 	}
 
@@ -148,7 +149,7 @@ class listener implements EventSubscriberInterface
 		$parent_id = $event['parent_id'];
 		$row = $event['row'];
 
-		$forum_rows[$parent_id]['bestanswer_id'] = $row['bestanswer_id'];
+		$forum_rows[$parent_id]['answer_post_id'] = $row['answer_post_id'];
 
 		$event['forum_rows'] = $forum_rows;
 	}
@@ -157,7 +158,7 @@ class listener implements EventSubscriberInterface
 	{
 		$sql_ary = $event['sql_ary'];
 
-		$sql_ary['SELECT'] .= ', t.bestanswer_id';
+		$sql_ary['SELECT'] .= ', t.answer_post_id';
 
 		if (!$this->has_join($sql_ary['LEFT_JOIN'], POSTS_TABLE))
 		{
@@ -184,7 +185,7 @@ class listener implements EventSubscriberInterface
 		$row = $event['row'];
 
 		// Add the template switch for viewforum
-		$forum_row['S_ANSWERED'] = $row['bestanswer_id'] ? true : false;
+		$forum_row['S_ANSWERED'] = $row['answer_post_id'] ? true : false;
 
 		$event['forum_row'] = $forum_row;
 	}
@@ -195,15 +196,15 @@ class listener implements EventSubscriberInterface
 		$post_info = $event['post_info'];
 
 		// Query the topic table so we can update answer counts correctly
-		$sql = 'SELECT bestanswer_id
+		$sql = 'SELECT answer_post_id
 			FROM ' . TOPICS_TABLE . '
 			WHERE topic_id = ' . (int) $post_info['topic_id'];
 		$result = $this->db->sql_query($sql);
-		$bestanswer_id = (int) $this->db->sql_fetchfield('bestanswer_id');
+		$answer_post_id = (int) $this->db->sql_fetchfield('answer_post_id');
 		$this->db->sql_freeresult($result);
 
 		// Update the answer counts
-		if ($bestanswer_id == $post_info['post_id'])
+		if ($answer_post_id == $post_info['post_id'])
 		{
 			$sql = 'UPDATE ' . USERS_TABLE . '
 				SET user_answers = user_answers - 1
@@ -216,8 +217,8 @@ class listener implements EventSubscriberInterface
 			$this->db->sql_query($sql);
 
 			$sql = 'UPDATE ' . TOPICS_TABLE . '
-				SET bestanswer_user_id = ' . (int) $userdata['user_id'] . '
-				WHERE bestanswer_id = ' . (int) $bestanswer_id;
+				SET answer_user_id = ' . (int) $userdata['user_id'] . '
+				WHERE answer_post_id = ' . (int) $answer_post_id;
 			$this->db->sql_query($sql);
 		}
 	}
@@ -226,16 +227,62 @@ class listener implements EventSubscriberInterface
 	{
 		$topic_id = $event['topic_id'];
 
-		$sql = 'SELECT bestanswer_id
+		$sql = 'SELECT answer_post_id
 			FROM ' . TOPICS_TABLE . '
 			WHERE topic_id = ' . (int) $topic_id;
 		$result = $this->db->sql_query($sql);
-		$bestanswer_id = (int) $this->db->sql_fetchfield('bestanswer_id');
+		$answer_post_id = (int) $this->db->sql_fetchfield('answer_post_id');
 		$this->db->sql_freeresult($result);
 
+		// Only run this query if the topic has a best answer
+		if (!empty($answer_post_id))
+		{
+			$sql = 'SELECT p.*, u.user_id, u.username, u.user_colour
+				FROM ' . POSTS_TABLE . ' p, ' . USERS_TABLE . ' u
+				WHERE p.post_id = ' . (int) $answer_post_id . '
+					AND p.poster_id = u.user_id';
+			$result = $this->db->sql_query($sql);
+			while ($row = $this->db->sql_fetchrow($result))
+			{
+				$bbcode_options = (($row['enable_bbcode']) ? OPTION_FLAG_BBCODE : 0) +
+					(($row['enable_smilies']) ? OPTION_FLAG_SMILIES : 0) +
+					(($row['enable_magic_url']) ? OPTION_FLAG_LINKS : 0);
+				$this->answer['POST_TEXT'] = generate_text_for_display($row['post_text'], $row['bbcode_uid'], $row['bbcode_bitfield'], $bbcode_options);
+				$this->answer['USERNAME_FULL'] = get_username_string('full', $row['user_id'], $row['username'], $row['user_colour']);
+				$this->answer['POST_TIME'] = $this->user->format_date($row['post_time']);
+			}
+			$this->db->sql_freeresult($result);
+		}
+
 		$this->template->assign_vars(array(
-			'S_ANSWERED'	=> $bestanswer_id ? true : false,
+			'S_ANSWERED'	=> $answer_post_id ? true : false,
 		));
+	}
+
+	public function mcp_topic_review_modify_row($event)
+	{
+		$row = $event['row'];
+		$post_row = $event['post_row'];
+		$topic_info = $event['topic_info'];
+
+		$post_row = array_merge($post_row, array(
+			'ANSWER_POST_ID'	=> (int) $topic_info['answer_post_id'],
+
+			'U_ANSWER'			=> append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 'p=' . (int) $topic_info['answer_post_id'] . '#p' . (int) $topic_info['answer_post_id']),
+
+			'S_ANSWER'		=> $topic_info['enable_answer'] ? true : false,
+			'S_FIRST_POST'	=> $topic_info['topic_first_post_id'] == $row['post_id'] ? true : false,
+		));
+
+		// Only pull answer post text if an answer_post_id is supplied and the post_id is the first post in a topic
+		if (sizeof($this->answer) && ($topic_info['topic_first_post_id'] == $row['post_id']))
+		{
+			$post_row['ANSWER_POST_TEXT'] = $this->answer['POST_TEXT'];
+			$post_row['ANSWER_USERNAME_FULL'] = $this->answer['USERNAME_FULL'];
+			$post_row['ANSWER_POST_TIME'] =  $this->answer['POST_TIME'];
+		}
+
+		$event['post_row'] = $post_row;
 	}
 
 	public function mcp_view_forum_modify_topicrow($event)
@@ -243,7 +290,7 @@ class listener implements EventSubscriberInterface
 		$row = $event['row'];
 		$topic_row = $event['topic_row'];
 
-		$topic_row['S_ANSWERED'] = $row['bestanswer_id'] ? true : false;
+		$topic_row['S_ANSWERED'] = $row['answer_post_id'] ? true : false;
 
 		$event['topic_row'] = $topic_row;
 	}
@@ -269,8 +316,8 @@ class listener implements EventSubscriberInterface
 	{
 		$permissions = $event['permissions'];
 
-		$permissions['f_mark_bestanswer'] = array('lang' => 'ACL_F_MARK_BESTANSWER', 'cat' => 'actions');
-		$permissions['m_mark_bestanswer'] = array('lang' => 'ACL_M_MARK_BESTANSWER', 'cat' => 'post_actions');
+		$permissions['f_mark_answer'] = array('lang' => 'ACL_F_MARK_ANSWER', 'cat' => 'actions');
+		$permissions['m_mark_answer'] = array('lang' => 'ACL_M_MARK_ANSWER', 'cat' => 'post_actions');
 
 		$event['permissions'] = $permissions;
 	}
@@ -288,7 +335,7 @@ class listener implements EventSubscriberInterface
 		if ($filter == 'topicsanswered')
 		{
 			$sql_select .= ', p.post_id, p.poster_id';
-			$sql_from .= ' LEFT JOIN ' . POSTS_TABLE . ' p ON (p.post_id = t.bestanswer_id)';
+			$sql_from .= ' LEFT JOIN ' . POSTS_TABLE . ' p ON (p.post_id = t.answer_post_id)';
 			$sql_where .= ' AND p.poster_id = ' . (int) $author_id;
 
 			// Set $total_match_count to 0 - DO NOT modify
@@ -298,14 +345,14 @@ class listener implements EventSubscriberInterface
 
 			// Grab all necessary data to modify total_match_count
 			$sql_array = array(
-				'SELECT'	=> 'p.post_id, p.poster_id, t.topic_id, t.bestanswer_id',
+				'SELECT'	=> 'p.post_id, p.poster_id, t.topic_id, t.answer_post_id',
 
 				'FROM'		=> array(
 					POSTS_TABLE		=> 'p',
 					TOPICS_TABLE	=> 't',
 				),
 
-				'WHERE'		=> 'p.post_id = t.bestanswer_id
+				'WHERE'		=> 'p.post_id = t.answer_post_id
 									AND p.poster_id = ' . (int) $author_id,
 			);
 			$sql = $this->db->sql_build_query('SELECT', $sql_array);
@@ -336,8 +383,8 @@ class listener implements EventSubscriberInterface
 	{
 		$lang_set_ext = $event['lang_set_ext'];
 		$lang_set_ext[] = array(
-			'ext_name'	=> 'kinerity/bestanswer',
-			'lang_set'	=> 'common',
+			'ext_name' => 'kinerity/bestanswer',
+			'lang_set' => 'common',
 		);
 		$event['lang_set_ext'] = $lang_set_ext;
 	}
@@ -347,7 +394,7 @@ class listener implements EventSubscriberInterface
 		$topic_data = $event['topic_data'];
 
 		$this->template->assign_vars(array(
-			'S_ANSWERED'	=> $topic_data['bestanswer_id'] ? true : false,
+			'S_ANSWERED'	=> $topic_data['answer_post_id'] ? true : false,
 		));
 	}
 
@@ -366,11 +413,11 @@ class listener implements EventSubscriberInterface
 		$topic_data = $event['topic_data'];
 
 		// Only run this query if the topic has a best answer
-		if (!empty($topic_data['bestanswer_id']))
+		if (!empty($topic_data['answer_post_id']))
 		{
 			$sql = 'SELECT p.*, u.user_id, u.username, u.user_colour
 				FROM ' . POSTS_TABLE . ' p, ' . USERS_TABLE . ' u
-				WHERE p.post_id = ' . (int) $topic_data['bestanswer_id'] . '
+				WHERE p.post_id = ' . (int) $topic_data['answer_post_id'] . '
 					AND p.poster_id = u.user_id';
 			$result = $this->db->sql_query($sql);
 			while ($row = $this->db->sql_fetchrow($result))
@@ -378,9 +425,9 @@ class listener implements EventSubscriberInterface
 				$bbcode_options = (($row['enable_bbcode']) ? OPTION_FLAG_BBCODE : 0) +
 					(($row['enable_smilies']) ? OPTION_FLAG_SMILIES : 0) +
 					(($row['enable_magic_url']) ? OPTION_FLAG_LINKS : 0);
-				$this->answer['TEXT'] = generate_text_for_display($row['post_text'], $row['bbcode_uid'], $row['bbcode_bitfield'], $bbcode_options);
-				$this->answer['AUTHOR_FULL'] = get_username_string('full', $row['user_id'], $row['username'], $row['user_colour']);
-				$this->answer['DATE'] = $this->user->format_date($row['post_time']);
+				$this->answer['POST_TEXT'] = generate_text_for_display($row['post_text'], $row['bbcode_uid'], $row['bbcode_bitfield'], $bbcode_options);
+				$this->answer['USERNAME_FULL'] = get_username_string('full', $row['user_id'], $row['username'], $row['user_colour']);
+				$this->answer['POST_TIME'] = $this->user->format_date($row['post_time']);
 			}
 			$this->db->sql_freeresult($result);
 		}
@@ -395,25 +442,25 @@ class listener implements EventSubscriberInterface
 		$topic_data = $event['topic_data'];
 
 		$post_row = array_merge($post_row, array(
-			'BESTANSWER_ID'		=> (int) $topic_data['bestanswer_id'],
+			'ANSWER_POST_ID'	=> (int) $topic_data['answer_post_id'],
 			'POSTER_ANSWERS'	=> $user_poster_data['poster_answers'],
 
-			'U_ANSWER'			=> append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 'p=' . (int) $topic_data['bestanswer_id'] . '#p' . (int) $topic_data['bestanswer_id']),
-			'U_MARK_ANSWER'		=> $topic_data['enable_bestanswer'] ? $this->helper->route('kinerity_bestanswer_main_controller', array('action' => 'mark_answer', 'p' => (int) $row['post_id'])) : '',
-			'U_UNMARK_ANSWER'	=> $topic_data['enable_bestanswer'] ? $this->helper->route('kinerity_bestanswer_main_controller', array('action' => 'unmark_answer', 'p' => (int) $row['post_id'])) : '',
+			'U_ANSWER'			=> append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 'p=' . (int) $topic_data['answer_post_id'] . '#p' . (int) $topic_data['answer_post_id']),
+			'U_MARK_ANSWER'		=> $topic_data['enable_answer'] ? $this->helper->route('kinerity_bestanswer_controller', array('action' => 'mark_answer', 'p' => (int) $row['post_id'])) : '',
+			'U_UNMARK_ANSWER'	=> $topic_data['enable_answer'] ? $this->helper->route('kinerity_bestanswer_controller', array('action' => 'unmark_answer', 'p' => (int) $row['post_id'])) : '',
 			'U_SEARCH_ANSWERS'	=> append_sid("{$this->root_path}search.{$this->php_ext}", 'author_id=' . (int) $poster_id . '&amp;sr=topics&amp;filter=topicsanswered'),
 
-			'S_AUTH'		=> $topic_data['topic_status'] == ITEM_LOCKED && !$this->auth->acl_get('m_mark_bestanswer', (int) $topic_data['forum_id']) ? false : ($this->auth->acl_get('m_mark_bestanswer', (int) $topic_data['forum_id']) || ($this->auth->acl_get('f_mark_bestanswer', (int) $topic_data['forum_id']) && $topic_data['topic_poster'] == $this->user->data['user_id']) ? true : false),
+			'S_ANSWER'		=> $topic_data['enable_answer'] ? true : false,
+			'S_AUTH'		=> $topic_data['topic_status'] == ITEM_LOCKED && !$this->auth->acl_get('m_mark_answer', (int) $topic_data['forum_id']) ? false : ($this->auth->acl_get('m_mark_answer', (int) $topic_data['forum_id']) || ($this->auth->acl_get('f_mark_answer', (int) $topic_data['forum_id']) && $topic_data['topic_poster'] == $this->user->data['user_id']) ? true : false),
 			'S_FIRST_POST'	=> $topic_data['topic_first_post_id'] == $row['post_id'] ? true : false,
-			'S_BEST_ANSWER'	=> $topic_data['enable_bestanswer'] ? true : false,
 		));
 
-		// Only pull answer post text if a bestanswer_id is supplied and the post_id is the first post in a topic
+		// Only pull answer post text if an answer_post_id is supplied and the post_id is the first post in a topic
 		if (sizeof($this->answer) && ($topic_data['topic_first_post_id'] == $row['post_id']))
 		{
-			$post_row['ANSWER_TEXT'] = $this->answer['TEXT'];
-			$post_row['ANSWER_AUTHOR_FULL'] = $this->answer['AUTHOR_FULL'];
-			$post_row['ANSWER_DATE'] =  $this->answer['DATE'];
+			$post_row['ANSWER_POST_TEXT'] = $this->answer['POST_TEXT'];
+			$post_row['ANSWER_USERNAME_FULL'] = $this->answer['USERNAME_FULL'];
+			$post_row['ANSWER_POST_TIME'] =  $this->answer['POST_TIME'];
 		}
 
 		$event['post_row'] = $post_row;
@@ -422,7 +469,7 @@ class listener implements EventSubscriberInterface
 	private function display_topic_answered($row, $block)
 	{
 		$block = array_merge($block, array(
-			'S_ANSWERED'	=> $row['bestanswer_id'] ? true : false,
+			'S_ANSWERED'	=> $row['answer_post_id'] ? true : false,
 		));
 
 		return $block;

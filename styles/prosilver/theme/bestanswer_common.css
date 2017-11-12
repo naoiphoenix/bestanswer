@@ -1,5 +1,5 @@
-.bestanswer + .post,
-.bestanswer + a#unread + .post {
+.answer + .post,
+.answer + a#unread + .post {
 	background-color: #EAF8E2;
 }
 
@@ -14,7 +14,7 @@
 	text-decoration: none;
 }
 
-.post_bestanswer {
+.post_answer {
 	background-color: #EAF8E2 !important;
 	padding: 10px;
 	border-radius: 7px;

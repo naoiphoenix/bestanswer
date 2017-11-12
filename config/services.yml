@@ -1,6 +1,18 @@
 services:
+    kinerity.bestanswer.controller:
+        class: kinerity\bestanswer\controller\main_controller
+        arguments:
+            - '@auth'
+            - '@dbal.conn'
+            - '@language'
+            - '@log'
+            - '@request'
+            - '@user'
+            - '%core.root_path%'
+            - '%core.php_ext%'
+
     kinerity.bestanswer.listener:
-        class: kinerity\bestanswer\event\listener
+        class: kinerity\bestanswer\event\main_listener
         arguments:
             - '@auth'
             - '@dbal.conn'
@@ -13,15 +25,3 @@ services:
             - '%core.php_ext%'
         tags:
             - { name: event.listener }
-
-    kinerity.bestanswer.main.controller:
-        class: kinerity\bestanswer\controller\main_controller
-        arguments:
-            - '@auth'
-            - '@dbal.conn'
-            - '@language'
-            - '@log'
-            - '@request'
-            - '@user'
-            - '%core.root_path%'
-            - '%core.php_ext%'
