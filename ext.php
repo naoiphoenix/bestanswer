@@ -23,7 +23,7 @@ class ext extends \phpbb\extension\base
 	 * The current phpBB version should meet or exceed
 	 * the minimum version required by this extension:
 	 *
-	 * Requires phpBB 3.2.0 and PHP 5.4.0.
+	 * Requires phpBB 3.2.2 and PHP 5.4.0.
 	 *
 	 * @return bool
 	 * @access public
