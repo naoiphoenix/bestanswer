@@ -22,6 +22,14 @@
 	margin-bottom: 17px;
 }
 
+div.profile-posts {
+	margin-left: 8px;
+}
+
+div.profile-posts a {
+	font-weight: normal;
+}
+
 .topic_answered {
 	color: #00AA00;
 	font-weight: bold;
