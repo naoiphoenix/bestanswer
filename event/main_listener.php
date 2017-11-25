@@ -90,8 +90,8 @@ class main_listener implements EventSubscriberInterface
 			'core.acp_manage_forums_initialise_data'	=> 'acp_manage_forums_initialise_data',
 			'core.acp_manage_forums_request_data'		=> 'acp_manage_forums_request_data',
 
-			/*'core.delete_posts_in_transaction_before'	=> 'delete_posts_in_transaction_before',
-			'core.delete_topics_before_query'			=> 'delete_topics_before_query',*/
+			/*'core.delete_posts_in_transaction_before'	=> 'delete_posts_in_transaction_before',*/
+			'core.delete_topics_before_query'			=> 'delete_topics_before_query',
 			'core.display_forums_modify_forum_rows'		=> 'display_forums_modify_forum_rows',
 			'core.display_forums_modify_sql'			=> 'display_forums_modify_sql',
 			'core.display_forums_modify_template_vars'	=> 'display_forums_modify_template_vars',
@@ -141,6 +141,30 @@ class main_listener implements EventSubscriberInterface
 		$forum_data = $event['forum_data'];
 		$forum_data['enable_answer'] = $this->request->variable('enable_answer', 0);
 		$event['forum_data'] = $forum_data;
+	}
+
+	public function delete_topics_before_query($event)
+	{
+		$topic_ids = $event['topic_ids'];
+		$answer_user_ids = array();
+
+		$sql = 'SELECT answer_user_id
+			FROM ' . TOPICS_TABLE . '
+			WHERE ' . $this->db->sql_in_set('topic_id', $topic_ids);
+		$result = $this->db->sql_query($sql);
+		while ($row = $this->db->sql_fetchrow($result))
+		{
+			$answer_user_ids[] = $row['answer_user_id'];
+		}
+		$this->db->sql_freeresult($result);
+
+		foreach ($answer_user_ids as $answer_user_id)
+		{
+			$sql = 'UPDATE ' . USERS_TABLE . '
+				SET user_answers = user_answers - 1
+				WHERE user_id = ' . (int) $answer_user_id;
+			$this->db->sql_query($sql);
+		}
 	}
 
 	public function display_forums_modify_forum_rows($event)
