@@ -104,8 +104,9 @@ class main_listener implements EventSubscriberInterface
 
 			'core.permissions'	=> 'permissions',
 
-			'core.search_get_topic_data'	=> 'search_get_topic_data',
-			'core.search_modify_tpl_ary'	=> 'modify_topicrow_tpl_ary',
+			'core.search_get_topic_data'		=> 'search_get_topic_data',
+			'core.search_modify_tpl_ary'		=> 'modify_topicrow_tpl_ary',
+			'core.set_topic_visibility_after'	=> 'set_topic_visibility_after',
 
 			'core.user_setup'	=> 'user_setup',
 
@@ -409,6 +410,35 @@ class main_listener implements EventSubscriberInterface
 		$event['sql_select'] = $sql_select;
 		$event['sql_from'] = $sql_from;
 		$event['sql_where'] = $sql_where;
+	}
+
+	public function set_topic_visibility_after($event)
+	{
+		$visibility = $event['visibility'];
+		$topic_id = $event['topic_id'];
+
+		if ($visibility == ITEM_DELETED)
+		{
+			$sql = 'SELECT answer_user_id
+				FROM ' . TOPICS_TABLE . '
+				WHERE topic_id = ' . (int) $topic_id;
+			$result = $this->db->sql_query($sql);
+			$answer_user_id = (int) $this->db->sql_fetchfield('answer_user_id');
+			$this->db->sql_freeresult($result);
+
+			$data = array(
+				'answer_post_id'	=> 0,
+				'answer_user_id'	=> 0,
+			);
+
+			$sql = 'UPDATE ' . TOPICS_TABLE . ' SET ' . $this->db->sql_build_array('UPDATE', $data) . ' WHERE topic_id = ' . (int) $topic_id;
+			$this->db->sql_query($sql);
+
+			$sql = 'UPDATE ' . USERS_TABLE . '
+				SET user_answers = user_answers - 1
+				WHERE user_id = ' . (int) $answer_user_id;
+			$this->db->sql_query($sql);
+		}
 	}
 
 	public function user_setup($event)
