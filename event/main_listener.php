@@ -426,18 +426,22 @@ class main_listener implements EventSubscriberInterface
 			$answer_user_id = (int) $this->db->sql_fetchfield('answer_user_id');
 			$this->db->sql_freeresult($result);
 
-			$data = array(
-				'answer_post_id'	=> 0,
-				'answer_user_id'	=> 0,
-			);
+			// Only update the tables if valid answer_user_id
+			if (!empty($answer_user_id))
+			{
+				$data = array(
+					'answer_post_id'	=> 0,
+					'answer_user_id'	=> 0,
+				);
 
-			$sql = 'UPDATE ' . TOPICS_TABLE . ' SET ' . $this->db->sql_build_array('UPDATE', $data) . ' WHERE topic_id = ' . (int) $topic_id;
-			$this->db->sql_query($sql);
+				$sql = 'UPDATE ' . TOPICS_TABLE . ' SET ' . $this->db->sql_build_array('UPDATE', $data) . ' WHERE topic_id = ' . (int) $topic_id;
+				$this->db->sql_query($sql);
 
-			$sql = 'UPDATE ' . USERS_TABLE . '
-				SET user_answers = user_answers - 1
-				WHERE user_id = ' . (int) $answer_user_id;
-			$this->db->sql_query($sql);
+				$sql = 'UPDATE ' . USERS_TABLE . '
+					SET user_answers = user_answers - 1
+					WHERE user_id = ' . (int) $answer_user_id;
+				$this->db->sql_query($sql);
+			}
 		}
 	}
 
