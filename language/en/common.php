@@ -55,6 +55,7 @@ $lang = array_merge($lang, array(
 
 	'SEARCH_USER_ANSWERS'	=> 'Search user’s answers',
 
+	'TOPIC_FIRST_POST'	=> 'You cannot mark this post as the best answer as it is the first post of the topic.',
 	'TOTAL_ANSWERES'	=> 'Total answers',
 
 	'UNMARK_ANSWER'			=> 'Unmark post as best answer',

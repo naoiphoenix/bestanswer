@@ -91,6 +91,23 @@ class main_controller
 		$topic_data = $this->db->sql_fetchrow($result);
 		$this->db->sql_freeresult($result);
 
+		// Validate all checks and throw errors
+		if (!$topic_data['enable_answer'])
+		{
+			throw new \phpbb\exception\http_exception(403, $this->lang->lang('NOT_AUTHORISED'));
+		}
+		if (!$this->auth->acl_get('m_mark_answer', (int) $topic_data['forum_id']) && (!$this->auth->acl_get('f_mark_answer', (int) $topic_data['forum_id']) && $topic_data['topic_poster'] != $this->user->data['user_id']))
+		{
+			throw new \phpbb\exception\http_exception(403, $this->lang->lang('NOT_AUTHORISED'));
+		}
+		if ($topic_data['topic_first_post_id'] == (int) $post_id)
+		{
+			throw new \phpbb\exception\http_exception(404, $this->lang->lang('TOPIC_FIRST_POST'));
+		}
+		if ($topic_data['topic_status'] == ITEM_LOCKED && !$this->auth->acl_get('m_mark_answer', (int) $topic_data['forum_id']))
+		{
+			throw new \phpbb\exception\http_exception(403, $this->lang->lang('NOT_AUTHORISED'));
+		}
 
 		$log_var = $this->auth->acl_get('m_mark_answer', $topic_data['forum_id']) ? 'mod' : 'user';
 
