@@ -334,7 +334,7 @@ class main_listener implements EventSubscriberInterface
 		$member = $event['member'];
 
 		$this->template->assign_vars(array(
-			'TOTAL_ANSWERES'	=> $member['user_answers'],
+			'ANSWERS'	=> $member['user_answers'],
 
 			'U_SEARCH_USER_ANSWERS'	=> append_sid("{$this->root_path}search.{$this->php_ext}", 'author_id=' . (int) $member['user_id'] . '&amp;sr=topics&amp;filter=topicsanswered'),
 		));
@@ -452,9 +452,9 @@ class main_listener implements EventSubscriberInterface
 		$user_info = $event['user_info'];
 
 		$msg_data = array_merge($msg_data, array(
-			'TOTAL_ANSWERES'	=> $user_info['user_answers'],
+			'AUTHOR_ANSWERS'	=> $user_info['user_answers'],
 
-			'U_SEARCH_USER_ANSWERS'	=> append_sid("{$this->root_path}search.{$this->php_ext}", 'author_id=' . (int) $user_info['user_id'] . '&amp;sr=topics&amp;filter=topicsanswered'),
+			'U_AUTHOR_ANSWERS'	=> append_sid("{$this->root_path}search.{$this->php_ext}", 'author_id=' . (int) $user_info['user_id'] . '&amp;sr=topics&amp;filter=topicsanswered'),
 		));
 
 		$event['msg_data'] = $msg_data;
