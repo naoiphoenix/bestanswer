@@ -108,7 +108,8 @@ class main_listener implements EventSubscriberInterface
 			'core.search_modify_tpl_ary'		=> 'modify_topicrow_tpl_ary',
 			'core.set_topic_visibility_after'	=> 'set_topic_visibility_after',
 
-			'core.user_setup'	=> 'user_setup',
+			'core.ucp_pm_view_message'	=> 'ucp_pm_view_message',
+			'core.user_setup'			=> 'user_setup',
 
 			'core.viewforum_modify_topicrow'				=> 'modify_topicrow_tpl_ary',
 			'core.viewtopic_assign_template_vars_before'	=> 'viewtopic_assign_template_vars_before',
@@ -443,6 +444,20 @@ class main_listener implements EventSubscriberInterface
 				$this->db->sql_query($sql);
 			}
 		}
+	}
+
+	public function ucp_pm_view_message($event)
+	{
+		$msg_data = $event['msg_data'];
+		$user_info = $event['user_info'];
+
+		$msg_data = array_merge($msg_data, array(
+			'TOTAL_ANSWERES'	=> $user_info['user_answers'],
+
+			'U_SEARCH_USER_ANSWERS'	=> append_sid("{$this->root_path}search.{$this->php_ext}", 'author_id=' . (int) $user_info['user_id'] . '&amp;sr=topics&amp;filter=topicsanswered'),
+		));
+
+		$event['msg_data'] = $msg_data;
 	}
 
 	public function user_setup($event)
