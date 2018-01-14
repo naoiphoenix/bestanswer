@@ -452,7 +452,7 @@ class main_listener implements EventSubscriberInterface
 		$user_info = $event['user_info'];
 
 		$msg_data = array_merge($msg_data, array(
-			'AUTHOR_ANSWERS'	=> $user_info['user_answers'],
+			'AUTHOR_ANSWERS'	=> (int) $user_info['user_answers'],
 
 			'U_AUTHOR_ANSWERS'	=> append_sid("{$this->root_path}search.{$this->php_ext}", 'author_id=' . (int) $user_info['user_id'] . '&amp;sr=topics&amp;filter=topicsanswered'),
 		));
