@@ -90,7 +90,7 @@ class main_listener implements EventSubscriberInterface
 			'core.acp_manage_forums_initialise_data'	=> 'acp_manage_forums_initialise_data',
 			'core.acp_manage_forums_request_data'		=> 'acp_manage_forums_request_data',
 
-			/*'core.delete_posts_in_transaction_before'	=> 'delete_posts_in_transaction_before',*/
+			'core.delete_posts_in_transaction_before'	=> 'delete_posts_in_transaction_before',
 			'core.delete_topics_before_query'			=> 'delete_topics_before_query',
 			'core.display_forums_modify_forum_rows'		=> 'display_forums_modify_forum_rows',
 			'core.display_forums_modify_sql'			=> 'display_forums_modify_sql',
@@ -106,6 +106,7 @@ class main_listener implements EventSubscriberInterface
 
 			'core.search_get_topic_data'		=> 'search_get_topic_data',
 			'core.search_modify_tpl_ary'		=> 'modify_topicrow_tpl_ary',
+			'core.set_post_visibility_after'	=> 'set_post_visibility_after',
 			'core.set_topic_visibility_after'	=> 'set_topic_visibility_after',
 
 			'core.ucp_pm_view_message'	=> 'ucp_pm_view_message',
@@ -143,6 +144,54 @@ class main_listener implements EventSubscriberInterface
 		$forum_data = $event['forum_data'];
 		$forum_data['enable_answer'] = $this->request->variable('enable_answer', 0);
 		$event['forum_data'] = $forum_data;
+	}
+
+	public function delete_posts_in_transaction_before($event)
+	{
+		$post_ids = $event['post_ids'];
+		$poster_ids = $event['poster_ids'];
+		$topic_ids = $event['topic_ids'];
+		$answer_post_ids = $answer_user_ids = array();
+
+		// We really only care about topics with answers, so
+		// select them here, then intersect each array
+		$sql = 'SELECT answer_post_id, answer_user_id
+			FROM ' . TOPICS_TABLE . '
+			WHERE ' . $this->db->sql_in_set('topic_id', $topic_ids) . '
+				AND answer_post_id <> 0';
+		$result = $this->db->sql_query($sql);
+		while ($row = $this->db->sql_fetchrow($result))
+		{
+			$answer_post_ids[] = $row['answer_post_id'];
+			$answer_user_ids[] = $row['answer_user_id'];
+		}
+		$this->db->sql_freeresult($result);
+
+		if (!empty($answer_post_ids))
+		{
+			$post_ids = array_intersect($post_ids, $answer_post_ids);
+			$poster_ids = array_intersect($poster_ids, $answer_user_ids);
+		}
+
+		// Remove the answer data from the TOPICS_TABLE
+		foreach ($post_ids as $post_id)
+		{
+			$data = array(
+				'answer_post_id'	=> 0,
+				'answer_user_id'	=> 0,
+			);
+
+			$sql = 'UPDATE ' . TOPICS_TABLE . ' SET ' . $this->db->sql_build_array('UPDATE', $data) . ' WHERE answer_post_id = ' . (int) $post_id;
+			$this->db->sql_query($sql);
+		}
+
+		foreach ($poster_ids as $poster_id)
+		{
+			$sql = 'UPDATE ' . USERS_TABLE . '
+				SET user_answers = user_answers - 1
+				WHERE user_id = ' . (int) $poster_id;
+			$this->db->sql_query($sql);
+		}
 	}
 
 	public function delete_topics_before_query($event)
@@ -411,6 +460,43 @@ class main_listener implements EventSubscriberInterface
 		$event['sql_select'] = $sql_select;
 		$event['sql_from'] = $sql_from;
 		$event['sql_where'] = $sql_where;
+	}
+
+	public function set_post_visibility_after($event)
+	{
+		$visibility = $event['visibility'];
+		$post_id = $event['post_id'];
+		$topic_id = $event['topic_id'];
+
+		if ($visibility == ITEM_DELETED)
+		{
+			$sql = 'SELECT answer_post_id, answer_user_id
+				FROM ' . TOPICS_TABLE . '
+				WHERE topic_id = ' . (int) $topic_id;
+			$result = $this->db->sql_query($sql);
+			while ($row = $this->db->sql_fetchrow($result))
+			{
+				$answer_post_id = $row['answer_post_id'];
+				$answer_user_id = $row['answer_user_id'];
+			}
+			$this->db->sql_freeresult($result);
+
+			if ((is_array($post_id) && in_array($answer_post_id, $post_id)) || $answer_post_id = $post_id)
+			{
+				$data = array(
+					'answer_post_id'	=> 0,
+					'answer_user_id'	=> 0,
+				);
+
+				$sql = 'UPDATE ' . TOPICS_TABLE . ' SET ' . $this->db->sql_build_array('UPDATE', $data) . ' WHERE topic_id = ' . (int) $topic_id;
+				$this->db->sql_query($sql);
+
+				$sql = 'UPDATE ' . USERS_TABLE . '
+					SET user_answers = user_answers - 1
+					WHERE user_id = ' . (int) $answer_user_id;
+				$this->db->sql_query($sql);
+			}
+		}
 	}
 
 	public function set_topic_visibility_after($event)
