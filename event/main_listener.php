@@ -368,8 +368,6 @@ class main_listener implements EventSubscriberInterface
 
 		$this->template->assign_vars(array(
 			'ANSWERS'	=> $member['user_answers'],
-
-			'U_SEARCH_USER_ANSWERS'	=> append_sid("{$this->root_path}search.{$this->php_ext}", 'author_id=' . (int) $member['user_id'] . '&amp;sr=topics&amp;filter=topicsanswered'),
 		));
 	}
 
@@ -391,59 +389,7 @@ class main_listener implements EventSubscriberInterface
 
 	public function search_get_topic_data($event)
 	{
-		$sql_select = $event['sql_select'];
-		$sql_from = $event['sql_from'];
-		$sql_where = $event['sql_where'];
-
-		// Allow users to search topics a user has answered
-		$filter = $this->request->variable('filter', '');
-		$author_id = $this->request->variable('author_id', 0);
-
-		if ($filter == 'topicsanswered')
-		{
-			$sql_select .= ', p.post_id, p.poster_id';
-			$sql_from .= ' LEFT JOIN ' . POSTS_TABLE . ' p ON (p.post_id = t.answer_post_id)';
-			$sql_where .= ' AND p.poster_id = ' . (int) $author_id;
-
-			// Set $total_match_count to 0 - DO NOT modify
-			// the $event['total_match_count'] variable - it
-			// will be set at the end of this if block
-			$total_match_count = 0;
-
-			// Grab all necessary data to modify total_match_count
-			$sql_array = array(
-				'SELECT'	=> 'p.post_id, p.poster_id, t.topic_id, t.answer_post_id',
-
-				'FROM'		=> array(
-					POSTS_TABLE		=> 'p',
-					TOPICS_TABLE	=> 't',
-				),
-
-				'WHERE'		=> 'p.post_id = t.answer_post_id
-									AND p.poster_id = ' . (int) $author_id,
-			);
-			$sql = $this->db->sql_build_query('SELECT', $sql_array);
-
-			// Run the built query
-			$result = $this->db->sql_query($sql);
-			while ($row = $this->db->sql_fetchrow($result))
-			{
-				$total_match_count++;
-			}
-			$this->db->sql_freeresult($result);
-
-			$event['total_match_count'] = $total_match_count;
-		}
-		// $filter is only allowed to have topics_answered as a value, but
-		// must also allow empty values so core searches are not affected
-		else if ($filter != '')
-		{
-			trigger_error($this->lang->lang('INVALID_FILTER'));
-		}
-
-		$event['sql_select'] = $sql_select;
-		$event['sql_from'] = $sql_from;
-		$event['sql_where'] = $sql_where;
+		// TODO; MAKE SURE PAGINATION IS INCLUDED!
 	}
 
 	public function set_post_visibility_after($event)
@@ -523,8 +469,6 @@ class main_listener implements EventSubscriberInterface
 
 		$msg_data = array_merge($msg_data, array(
 			'AUTHOR_ANSWERS'	=> (int) $user_info['user_answers'],
-
-			'U_AUTHOR_ANSWERS'	=> append_sid("{$this->root_path}search.{$this->php_ext}", 'author_id=' . (int) $user_info['user_id'] . '&amp;sr=topics&amp;filter=topicsanswered'),
 		));
 
 		$event['msg_data'] = $msg_data;
@@ -599,7 +543,6 @@ class main_listener implements EventSubscriberInterface
 			'U_ANSWER'			=> append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 'p=' . (int) $topic_data['answer_post_id'] . '#p' . (int) $topic_data['answer_post_id']),
 			'U_MARK_ANSWER'		=> $topic_data['enable_answer'] ? $this->helper->route('kinerity_bestanswer_controller', array('action' => 'mark_answer', 'p' => (int) $row['post_id'])) : '',
 			'U_UNMARK_ANSWER'	=> $topic_data['enable_answer'] ? $this->helper->route('kinerity_bestanswer_controller', array('action' => 'unmark_answer', 'p' => (int) $row['post_id'])) : '',
-			'U_SEARCH_ANSWERS'	=> append_sid("{$this->root_path}search.{$this->php_ext}", 'author_id=' . (int) $poster_id . '&amp;sr=topics&amp;filter=topicsanswered'),
 
 			'S_ANSWER'		=> $topic_data['enable_answer'] ? true : false,
 			'S_AUTH'		=> $topic_data['topic_status'] == ITEM_LOCKED && !$this->auth->acl_get('m_mark_answer', (int) $topic_data['forum_id']) ? false : ($this->auth->acl_get('m_mark_answer', (int) $topic_data['forum_id']) || ($this->auth->acl_get('f_mark_answer', (int) $topic_data['forum_id']) && $topic_data['topic_poster'] == $this->user->data['user_id']) ? true : false),
