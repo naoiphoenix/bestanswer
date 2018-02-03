@@ -217,6 +217,8 @@ class main_listener implements EventSubscriberInterface
 		// Suggested by the core, equal post times should never happen. Check it just in case.
 		if ($row['forum_last_post_time'] >= $forum_rows[$parent_id]['forum_last_post_time'])
 		{
+			$forum_rows[$parent_id]['answer_post_id'] = $row['answer_post_id'];
+
 			// Is the extension enabled on the forum and related answer_post_id not null?
 			if ($row['enable_answer'] && !($forum_rows[$parent_id]['answer_post_id'] === false))
 			{
