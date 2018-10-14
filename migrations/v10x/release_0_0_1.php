@@ -1,9 +1,9 @@
 <?php
 /**
  *
- * Best Answer. An extension for the phpBB Forum Software package.
+ * Best Answer extension for the phpBB Forum Software package
  *
- * @copyright (c) 2017, kinerity, https://www.layer-3.org
+ * @copyright (c) 2018, kinerity, https://www.layer-3.org
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */
@@ -22,7 +22,7 @@ class release_0_0_1 extends \phpbb\db\migration\container_aware_migration
 	 */
 	static public function depends_on()
 	{
-		return array('\phpbb\db\migration\data\v320\v320');
+		return array('\phpbb\db\migration\data\v32x\v323');
 	}
 
 	/**
