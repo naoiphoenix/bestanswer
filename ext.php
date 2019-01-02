@@ -1,9 +1,9 @@
 <?php
 /**
  *
- * Best Answer extension for the phpBB Forum Software package
+ * Best Answer extension for the phpBB Forum Software package.
  *
- * @copyright (c) 2018, kinerity, https://www.layer-3.org
+ * @copyright (c) 2018, kinerity, https://www.layer-3.org/
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */
@@ -23,12 +23,12 @@ class ext extends \phpbb\extension\base
 	 * The current phpBB version should meet or exceed
 	 * the minimum version required by this extension:
 	 *
-	 * Requires phpBB 3.2.3 and PHP 5.4.7
+	 * Requires phpBB 3.2.0 and PHP 5.4.7
 	 */
 	public function is_enableable()
 	{
 		$config = $this->container->get('config');
 
-		return phpbb_version_compare($config['version'], '3.2.3', '>=') && version_compare(PHP_VERSION, '5.4.7', '>=');
+		return phpbb_version_compare($config['version'], '3.2.0', '>=') && version_compare(PHP_VERSION, '5.4.7', '>=');
 	}
 }

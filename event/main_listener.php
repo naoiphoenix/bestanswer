@@ -1,9 +1,9 @@
 <?php
 /**
  *
- * Best Answer extension for the phpBB Forum Software package
+ * Best Answer extension for the phpBB Forum Software package.
  *
- * @copyright (c) 2018, kinerity, https://www.layer-3.org
+ * @copyright (c) 2018, kinerity, https://www.layer-3.org/
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */
@@ -16,7 +16,7 @@ namespace kinerity\bestanswer\event;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
- * Best Answer Event listener.
+ * Best Answer event listener
  */
 class main_listener implements EventSubscriberInterface
 {
@@ -29,9 +29,6 @@ class main_listener implements EventSubscriberInterface
 	/* @var \phpbb\controller\helper */
 	protected $helper;
 
-	/* @var \phpbb\language\language */
-	protected $lang;
-
 	/* @var \phpbb\request\request */
 	protected $request;
 
@@ -41,34 +38,32 @@ class main_listener implements EventSubscriberInterface
 	/* @var \phpbb\user */
 	protected $user;
 
-	/* @var string phpbb_root_path */
+	/* @var string */
 	protected $root_path;
 
-	/* @var string phpEx */
+	/* @var string */
 	protected $php_ext;
 
-	/* @var array answer */
+	/* @var array */
 	private $answer = array();
 
 	/**
 	 * Constructor
 	 *
-	 * @param \phpbb\auth\auth					$auth
-	 * @param \phpbb\db\driver\driver_interface	$db
-	 * @param \phpbb\controller\helper			$helper
-	 * @param \phpbb\language\language			$lang
-	 * @param \phpbb\request\request			$request
-	 * @param \phpbb\template\template			$template
-	 * @param \phpbb\user						$user
-	 * @param string							$root_path
-	 * @param string							$php_ext
+	 * @param \phpbb\auth\auth                    $auth
+	 * @param \phpbb\db\driver\driver_interface   $db
+	 * @param \phpbb\controller\helper            $helper
+	 * @param \phpbb\request\request              $request
+	 * @param \phpbb\template\template            $template
+	 * @param \phpbb\user                         $user
+	 * @param string                              $root_path
+	 * @param string                              $php_ext
 	 */
-	public function __construct(\phpbb\auth\auth $auth, \phpbb\db\driver\driver_interface $db, \phpbb\controller\helper $helper, \phpbb\language\language $lang, \phpbb\request\request $request, \phpbb\template\template $template, \phpbb\user $user, $root_path, $php_ext)
+	public function __construct(\phpbb\auth\auth $auth, \phpbb\db\driver\driver_interface $db, \phpbb\controller\helper $helper, \phpbb\request\request $request, \phpbb\template\template $template, \phpbb\user $user, $root_path, $php_ext)
 	{
 		$this->auth = $auth;
 		$this->db = $db;
 		$this->helper = $helper;
-		$this->lang = $lang;
 		$this->request = $request;
 		$this->template = $template;
 		$this->user = $user;
@@ -76,13 +71,6 @@ class main_listener implements EventSubscriberInterface
 		$this->php_ext = $php_ext;
 	}
 
-	/**
-	 * Assign functions defined in this class to event listeners in the core
-	 *
-	 * @return array
-	 * @static
-	 * @access public
-	 */
 	static public function getSubscribedEvents()
 	{
 		return array(
@@ -104,9 +92,7 @@ class main_listener implements EventSubscriberInterface
 
 			'core.permissions'	=> 'permissions',
 
-			'core.search_get_topic_data'		=> 'search_get_topic_data',
 			'core.search_modify_tpl_ary'		=> 'modify_topicrow_tpl_ary',
-			'core.set_post_visibility_after'	=> 'set_post_visibility_after',
 			'core.set_topic_visibility_after'	=> 'set_topic_visibility_after',
 
 			'core.ucp_pm_view_message'	=> 'ucp_pm_view_message',
@@ -122,8 +108,10 @@ class main_listener implements EventSubscriberInterface
 
 	public function acp_manage_forums_display_form($event)
 	{
-		$template_data = $event['template_data'];
-		$template_data['S_BEST_ANSWER'] = $event['forum_data']['enable_answer'];
+		$template_data = array_merge($event['template_data'], array(
+			'S_ENABLE_ANSWER'	=> $event['forum_data']['enable_answer'],
+		));
+
 		$event['template_data'] = $template_data;
 	}
 
@@ -131,18 +119,20 @@ class main_listener implements EventSubscriberInterface
 	{
 		if ($event['action'] == 'add')
 		{
-			$forum_data = $event['forum_data'];
-			$forum_data = array_merge($forum_data, array(
+			$forum_data = array_merge($event['forum_data'], array(
 				'enable_answer'	=> false,
 			));
+
 			$event['forum_data'] = $forum_data;
 		}
 	}
 
 	public function acp_manage_forums_request_data($event)
 	{
-		$forum_data = $event['forum_data'];
-		$forum_data['enable_answer'] = $this->request->variable('enable_answer', 0);
+		$forum_data = array_merge($event['forum_data'], array(
+			'enable_answer'	=> $this->request->variable('enable_answer', 0),
+		));
+
 		$event['forum_data'] = $forum_data;
 	}
 
@@ -150,10 +140,9 @@ class main_listener implements EventSubscriberInterface
 	{
 		$post_ids = $event['post_ids'];
 		$topic_ids = $event['topic_ids'];
-
 		$answer_post_ids = $answer_user_ids = array();
 
-		// We really only care about topics with answers, so select them here
+		// Only query topics with answers
 		$sql = 'SELECT answer_post_id, answer_user_id
 			FROM ' . TOPICS_TABLE . '
 			WHERE ' . $this->db->sql_in_set('topic_id', $topic_ids) . '
@@ -179,8 +168,13 @@ class main_listener implements EventSubscriberInterface
 			$sql = 'UPDATE ' . TOPICS_TABLE . ' SET ' . $this->db->sql_build_array('UPDATE', $data) . ' WHERE ' . $this->db->sql_in_set('answer_post_id', $answer_post_ids);
 			$this->db->sql_query($sql);
 
-			$sql = 'UPDATE ' . USERS_TABLE . ' SET user_answers = user_answers - 1 WHERE ' . $this->db->sql_in_set('user_id', $answer_user_ids);
-			$this->db->sql_query($sql);
+			foreach ($answer_user_ids as $answer_user_id)
+			{
+				$sql = 'UPDATE ' . USERS_TABLE . '
+					SET user_answers = user_answers - 1
+					WHERE user_id = ' . (int) $answer_user_id;
+				$this->db->sql_query($sql);
+			}
 		}
 	}
 
@@ -233,16 +227,16 @@ class main_listener implements EventSubscriberInterface
 	{
 		$sql_ary = $event['sql_ary'];
 
-		$sql_ary['SELECT'] .= ', kba_t.answer_post_id';
+		$sql_ary['SELECT'] .= ', a_t.answer_post_id';
 
 		$sql_ary['LEFT_JOIN'][] = array(
-			'FROM'	=> array(POSTS_TABLE => 'kba_p'),
-			'ON'	=> 'f.forum_last_post_id = kba_p.post_id',
+			'FROM'	=> array(POSTS_TABLE => 'a_p'),
+			'ON'	=> 'f.forum_last_post_id = a_p.post_id',
 		);
 
 		$sql_ary['LEFT_JOIN'][] = array(
-			'FROM'	=> array(TOPICS_TABLE => 'kba_t'),
-			'ON'	=> 'kba_t.topic_id = kba_p.topic_id',
+			'FROM'	=> array(TOPICS_TABLE => 'a_t'),
+			'ON'	=> 'a_t.topic_id = a_p.topic_id',
 		);
 
 		$event['sql_ary'] = $sql_ary;
@@ -250,11 +244,12 @@ class main_listener implements EventSubscriberInterface
 
 	public function display_forums_modify_template_vars($event)
 	{
-		$forum_row = $event['forum_row'];
 		$row = $event['row'];
 
 		// Add the template switch for viewforum
-		$forum_row['S_ANSWERED'] = $row['answer_post_id'] ? true : false;
+		$forum_row = array_merge($event['forum_row'], array(
+			'S_ANSWERED'	=> $row['answer_post_id'] ? true : false,
+		));
 
 		$event['forum_row'] = $forum_row;
 	}
@@ -264,7 +259,7 @@ class main_listener implements EventSubscriberInterface
 		$userdata = $event['userdata'];
 		$post_info = $event['post_info'];
 
-		// Query the topic table so we can update answer counts correctly
+		// Query the topic table to update answer counts
 		$sql = 'SELECT answer_post_id
 			FROM ' . TOPICS_TABLE . '
 			WHERE topic_id = ' . (int) $post_info['topic_id'];
@@ -334,22 +329,24 @@ class main_listener implements EventSubscriberInterface
 		$post_row = $event['post_row'];
 		$topic_info = $event['topic_info'];
 
-		$post_row = array_merge($post_row, array(
-			'ANSWER_POST_ID'	=> (int) $topic_info['answer_post_id'],
-
-			'U_ANSWER'			=> append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 'p=' . (int) $topic_info['answer_post_id'] . '#p' . (int) $topic_info['answer_post_id']),
-
-			'S_ANSWER'		=> $topic_info['enable_answer'] ? true : false,
-			'S_FIRST_POST'	=> $topic_info['topic_first_post_id'] == $row['post_id'] ? true : false,
-		));
-
-		// Only pull answer post text if an answer_post_id is supplied and the post_id is the first post in a topic
+		// Does the topic have a best answer and is the post the first post in a topic
 		if (sizeof($this->answer) && ($topic_info['topic_first_post_id'] == $row['post_id']))
 		{
-			$post_row['ANSWER_POST_TEXT'] = $this->answer['POST_TEXT'];
-			$post_row['ANSWER_USERNAME_FULL'] = $this->answer['USERNAME_FULL'];
-			$post_row['ANSWER_POST_TIME'] =  $this->answer['POST_TIME'];
+			$post_row = array_merge($post_row, array(
+				'U_ANSWER'	=> append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 'p=' . (int) $topic_info['answer_post_id'] . '#p' . (int) $topic_info['answer_post_id']),
+
+				'ANSWER_POST_TEXT'	=> $this->answer['POST_TEXT'],
+				'ANSWER_USERNAME_FULL'	=> $this->answer['USERNAME_FULL'],
+				'ANSWER_POST_TIME'	=> $this->answer['POST_TIME'],
+			));
 		}
+
+		$post_row = array_merge($post_row, array(
+			//'S_ANSWER'	=> $topic_info['enable_answer'] ? true : false,
+			'ANSWER_POST_ID'	=> (int) $topic_info['answer_post_id'],
+
+			'S_FIRST_POST'	=> $topic_info['topic_first_post_id'] == $row['post_id'] ? true : false,
+		));
 
 		$event['post_row'] = $post_row;
 	}
@@ -357,41 +354,35 @@ class main_listener implements EventSubscriberInterface
 	public function mcp_view_forum_modify_topicrow($event)
 	{
 		$row = $event['row'];
-		$topic_row = $event['topic_row'];
 
-		$topic_row['S_ANSWERED'] = $row['answer_post_id'] ? true : false;
+		$topic_row = array_merge($event['topic_row'], array(
+			'S_ANSWERED'	=> $row['answer_post_id'] ? true : false,
+		));
 
 		$event['topic_row'] = $topic_row;
 	}
 
 	public function memberlist_view_profile($event)
 	{
-		$member = $event['member'];
-
 		$this->template->assign_vars(array(
-			'ANSWERS'	=> $member['user_answers'],
+			'ANSWERS'	=> $event['member']['user_answers'],
 		));
 	}
 
 	public function modify_topicrow_tpl_ary($event)
 	{
 		$block = $event['topic_row'] ? 'topic_row' : 'tpl_ary';
-		$event[$block] = $this->display_topic_answered($event['row'], $event[$block]);
+		$event[$block] = $this->modify_topicrow_tpl($event['row'], $event[$block]);
 	}
 
 	public function permissions($event)
 	{
-		$permissions = $event['permissions'];
-
-		$permissions['f_mark_answer'] = array('lang' => 'ACL_F_MARK_ANSWER', 'cat' => 'actions');
-		$permissions['m_mark_answer'] = array('lang' => 'ACL_M_MARK_ANSWER', 'cat' => 'post_actions');
+		$permissions = array_merge($event['permissions'], array(
+			'f_mark_answer'	=> array('lang' => 'ACL_F_MARK_ANSWER', 'cat' => 'actions'),
+			'm_mark_answer'	=> array('lang' => 'ACL_M_MARK_ANSWER', 'cat' => 'post_actions'),
+		));
 
 		$event['permissions'] = $permissions;
-	}
-
-	public function search_get_topic_data($event)
-	{
-		// TODO; MAKE SURE PAGINATION IS INCLUDED!
 	}
 
 	public function set_post_visibility_after($event)
@@ -466,11 +457,8 @@ class main_listener implements EventSubscriberInterface
 
 	public function ucp_pm_view_message($event)
 	{
-		$msg_data = $event['msg_data'];
-		$user_info = $event['user_info'];
-
-		$msg_data = array_merge($msg_data, array(
-			'AUTHOR_ANSWERS'	=> (int) $user_info['user_answers'],
+		$msg_data = array_merge($event['msg_data'], array(
+			'AUTHOR_ANSWERS'	=> (int) $event['user_info']['user_answers'],
 		));
 
 		$event['msg_data'] = $msg_data;
@@ -551,18 +539,20 @@ class main_listener implements EventSubscriberInterface
 			'S_FIRST_POST'	=> $topic_data['topic_first_post_id'] == $row['post_id'] ? true : false,
 		));
 
-		// Only pull answer post text if an answer_post_id is supplied and the post_id is the first post in a topic
+		// Only add to post_row array if an answer_post_id is supplied and the post_id is the first post in a topic
 		if (sizeof($this->answer) && ($topic_data['topic_first_post_id'] == $row['post_id']))
 		{
-			$post_row['ANSWER_POST_TEXT'] = $this->answer['POST_TEXT'];
-			$post_row['ANSWER_USERNAME_FULL'] = $this->answer['USERNAME_FULL'];
-			$post_row['ANSWER_POST_TIME'] =  $this->answer['POST_TIME'];
+			$post_row = array_merge($post_row, array(
+				'ANSWER_POST_TEXT'		=> $this->answer['POST_TEXT'],
+				'ANSWER_USERNAME_FULL'	=> $this->answer['USERNAME_FULL'],
+				'ANSWER_POST_TIME'		=> $this->answer['POST_TIME'],
+			));
 		}
 
 		$event['post_row'] = $post_row;
 	}
 
-	private function display_topic_answered($row, $block)
+	private function modify_topicrow_tpl($row, $block)
 	{
 		$block = array_merge($block, array(
 			'S_ANSWERED'	=> $row['answer_post_id'] ? true : false,

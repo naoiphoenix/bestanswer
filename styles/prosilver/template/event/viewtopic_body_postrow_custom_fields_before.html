@@ -1,7 +1,7 @@
-<!-- IF postrow.POSTER_ANSWERS != '' -->
-<!-- INCLUDEJS @kinerity_bestanswer/jxtools.js -->
+{% if postrow.POSTER_ANSWERS != '' %}
+{% INCLUDEJS '@kinerity_bestanswer/jxtools.js' %}
 
-<dd id="list_inner_hidden_container_{postrow.POST_ID}" jxdom-closest="dl.postprofile" jxdom-find="dd.profile-joined" jxdom-action="before" >
-<div class="profile-answers"><strong>{L_ANSWERS}{L_COLON}</strong> {postrow.POSTER_ANSWERS}</div>
+<dd id="list_inner_hidden_container_{{ postrow.POST_ID }}" jxdom-closest="dl.postprofile" jxdom-find="dd.profile-joined" jxdom-action="before" >
+<div class="profile-answers"><strong>{{ lang('ANSWERS') }}{{ lang('COLON') }}</strong> {{ postrow.POSTER_ANSWERS }}</div>
 </dd>
-<!-- ENDIF -->
+{% endif %}
