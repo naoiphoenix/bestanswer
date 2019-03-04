@@ -39,8 +39,8 @@ class main_controller
 	/* @var string */
 	protected $php_ext;
 
-	 * Constructor
 	/**
+	 * Constructor
 	 *
 	 * @param \phpbb\auth\auth                    $auth
 	 * @param \phpbb\db\driver\driver_interface   $db
