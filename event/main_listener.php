@@ -93,6 +93,7 @@ class main_listener implements EventSubscriberInterface
 			'core.permissions'	=> 'permissions',
 
 			'core.search_modify_tpl_ary'		=> 'modify_topicrow_tpl_ary',
+			'core.set_post_visibility_after'	=> 'set_post_visibility_after',
 			'core.set_topic_visibility_after'	=> 'set_topic_visibility_after',
 
 			'core.ucp_pm_view_message'	=> 'ucp_pm_view_message',
@@ -108,32 +109,20 @@ class main_listener implements EventSubscriberInterface
 
 	public function acp_manage_forums_display_form($event)
 	{
-		$template_data = array_merge($event['template_data'], array(
-			'S_ENABLE_ANSWER'	=> $event['forum_data']['enable_answer'],
-		));
-
-		$event['template_data'] = $template_data;
+		$event->update_subarray('template_data', 'S_ENABLE_ANSWER', $event['forum_data']['enable_answer']);
 	}
 
 	public function acp_manage_forums_initialise_data($event)
 	{
 		if ($event['action'] == 'add')
 		{
-			$forum_data = array_merge($event['forum_data'], array(
-				'enable_answer'	=> false,
-			));
-
-			$event['forum_data'] = $forum_data;
+			$event->update_subarray('forum_data', 'enable_answer', false);
 		}
 	}
 
 	public function acp_manage_forums_request_data($event)
 	{
-		$forum_data = array_merge($event['forum_data'], array(
-			'enable_answer'	=> $this->request->variable('enable_answer', 0),
-		));
-
-		$event['forum_data'] = $forum_data;
+		$event->update_subarray('forum_data', 'enable_answer', $this->request->variable('enable_answer', 0));
 	}
 
 	public function delete_posts_in_transaction_before($event)
@@ -163,18 +152,15 @@ class main_listener implements EventSubscriberInterface
 			'answer_user_id'	=> 0,
 		);
 
-		if (sizeof($answer_post_ids))
+		if ($answer_post_ids)
 		{
 			$sql = 'UPDATE ' . TOPICS_TABLE . ' SET ' . $this->db->sql_build_array('UPDATE', $data) . ' WHERE ' . $this->db->sql_in_set('answer_post_id', $answer_post_ids);
 			$this->db->sql_query($sql);
 
-			foreach ($answer_user_ids as $answer_user_id)
-			{
-				$sql = 'UPDATE ' . USERS_TABLE . '
-					SET user_answers = user_answers - 1
-					WHERE user_id = ' . (int) $answer_user_id;
-				$this->db->sql_query($sql);
-			}
+			$sql = 'UPDATE ' . USERS_TABLE . '
+				SET user_answers = user_answers - 1
+				WHERE ' . $this->db->sql_in_set('user_id', $answer_user_ids, false, true);
+			$this->db->sql_query($sql);
 		}
 	}
 
@@ -193,13 +179,10 @@ class main_listener implements EventSubscriberInterface
 		}
 		$this->db->sql_freeresult($result);
 
-		foreach ($answer_user_ids as $answer_user_id)
-		{
-			$sql = 'UPDATE ' . USERS_TABLE . '
-				SET user_answers = user_answers - 1
-				WHERE user_id = ' . (int) $answer_user_id;
-			$this->db->sql_query($sql);
-		}
+		$sql = 'UPDATE ' . USERS_TABLE . '
+			SET user_answers = user_answers - 1
+			WHERE ' . $this->db->sql_in_set('user_id', $answer_user_ids, false, true);
+		$this->db->sql_query($sql);
 	}
 
 	public function display_forums_modify_forum_rows($event)
@@ -330,7 +313,7 @@ class main_listener implements EventSubscriberInterface
 		$topic_info = $event['topic_info'];
 
 		// Does the topic have a best answer and is the post the first post in a topic
-		if (sizeof($this->answer) && ($topic_info['topic_first_post_id'] == $row['post_id']))
+		if ($this->answer && ($topic_info['topic_first_post_id'] == $row['post_id']))
 		{
 			$post_row = array_merge($post_row, array(
 				'U_ANSWER'	=> append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 'p=' . (int) $topic_info['answer_post_id'] . '#p' . (int) $topic_info['answer_post_id']),
@@ -397,14 +380,10 @@ class main_listener implements EventSubscriberInterface
 				FROM ' . TOPICS_TABLE . '
 				WHERE topic_id = ' . (int) $topic_id;
 			$result = $this->db->sql_query($sql);
-			while ($row = $this->db->sql_fetchrow($result))
-			{
-				$answer_post_id = $row['answer_post_id'];
-				$answer_user_id = $row['answer_user_id'];
-			}
+			$row = $this->db->sql_fetchrow($result);
 			$this->db->sql_freeresult($result);
 
-			if ((is_array($post_id) && in_array($answer_post_id, $post_id)) || $answer_post_id = $post_id)
+			if ((is_array($post_id) && in_array((int) $row['answer_post_id'], $post_id)) || (int) $row['answer_post_id'] = $post_id)
 			{
 				$data = array(
 					'answer_post_id'	=> 0,
@@ -416,7 +395,7 @@ class main_listener implements EventSubscriberInterface
 
 				$sql = 'UPDATE ' . USERS_TABLE . '
 					SET user_answers = user_answers - 1
-					WHERE user_id = ' . (int) $answer_user_id;
+					WHERE user_id = ' . (int) $row['answer_user_id'];
 				$this->db->sql_query($sql);
 			}
 		}
@@ -520,7 +499,6 @@ class main_listener implements EventSubscriberInterface
 
 	public function viewtopic_modify_post_row($event)
 	{
-		$poster_id = $event['poster_id'];
 		$row = $event['row'];
 		$user_poster_data = $event['user_poster_data'];
 		$post_row = $event['post_row'];
@@ -540,7 +518,7 @@ class main_listener implements EventSubscriberInterface
 		));
 
 		// Only add to post_row array if an answer_post_id is supplied and the post_id is the first post in a topic
-		if (sizeof($this->answer) && ($topic_data['topic_first_post_id'] == $row['post_id']))
+		if ($this->answer && ($topic_data['topic_first_post_id'] == $row['post_id']))
 		{
 			$post_row = array_merge($post_row, array(
 				'ANSWER_POST_TEXT'		=> $this->answer['POST_TEXT'],

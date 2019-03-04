@@ -12,6 +12,11 @@ namespace kinerity\bestanswer\migrations\v10x;
 
 class release_0_0_1 extends \phpbb\db\migration\container_aware_migration
 {
+	public function effectively_installed()
+	{
+		return $this->db_tools->sql_column_exists($this->table_prefix . 'forums', 'enable_answer');
+	}
+
 	static public function depends_on()
 	{
 		return array('\phpbb\db\migration\data\v320\v320');

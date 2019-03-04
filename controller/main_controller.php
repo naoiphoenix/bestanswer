@@ -21,6 +21,9 @@ class main_controller
 	/* @var \phpbb\db\driver\driver_interface */
 	protected $db;
 
+	/* @var \phpbb\language\language */
+	protected $lang;
+
 	/* @var \phpbb\log\log */
 	protected $log;
 
@@ -36,11 +39,12 @@ class main_controller
 	/* @var string */
 	protected $php_ext;
 
-	/**
 	 * Constructor
+	/**
 	 *
 	 * @param \phpbb\auth\auth                    $auth
 	 * @param \phpbb\db\driver\driver_interface   $db
+	 * @param \phpbb\language\language            $lang
 	 * @param \phpbb\log\log                      $log
 	 * @param \phpbb\request\request              $request
 	 * @param \phpbb\user                         $user
@@ -51,6 +55,7 @@ class main_controller
 	{
 		$this->auth = $auth;
 		$this->db = $db;
+		$this->lang = $lang;
 		$this->log = $log;
 		$this->request = $request;
 		$this->user = $user;
@@ -87,22 +92,22 @@ class main_controller
 		// Error checking
 		if (!$topic_data['enable_answer'])
 		{
-			throw new \phpbb\exception\http_exception(403, $this->user->lang('NOT_AUTHORISED'));
+			throw new \phpbb\exception\http_exception(403, $this->lang->lang('NOT_AUTHORISED'));
 		}
 
 		if (!$this->auth->acl_get('m_mark_answer', (int) $topic_data['forum_id']) && (!$this->auth->acl_get('f_mark_answer', (int) $topic_data['forum_id']) && $topic_data['topic_poster'] != (int) $this->user->data['user_id']))
 		{
-			throw new \phpbb\exception\http_exception(403, $this->user->lang('NOT_AUTHORISED'));
+			throw new \phpbb\exception\http_exception(403, $this->lang->lang('NOT_AUTHORISED'));
 		}
 
 		if ((int) $topic_data['topic_first_post_id'] == (int) $post_id)
 		{
-			throw new \phpbb\exception\http_exception(404, $this->user->lang('NOT_AUTHORISED'));
+			throw new \phpbb\exception\http_exception(404, $this->lang->lang('NOT_AUTHORISED'));
 		}
 
 		if ((int) $topic_data['topic_status'] == ITEM_LOCKED && !$this->auth->acl_get('m_mark_answer', (int) $topic_data['forum_id']))
 		{
-			throw new \phpbb\exception\http_exception(403, $this->user->lang('NOT_AUTHORISED'));
+			throw new \phpbb\exception\http_exception(403, $this->lang->lang('NOT_AUTHORISED'));
 		}
 
 		$log_var = $this->auth->acl_get('m_mark_answer', (int) $topic_data['forum_id']) ? 'mod' : 'user';
@@ -171,7 +176,7 @@ class main_controller
 		}
 		else
 		{
-			confirm_box(false, $this->user->lang(strtoupper($action) . '_CONFIRM'));
+			confirm_box(false, $this->lang->lang(strtoupper($action) . '_CONFIRM'));
 		}
 
 		// Redirect back to the post
