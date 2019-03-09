@@ -325,7 +325,6 @@ class main_listener implements EventSubscriberInterface
 		}
 
 		$post_row = array_merge($post_row, array(
-			//'S_ANSWER'	=> $topic_info['enable_answer'] ? true : false,
 			'ANSWER_POST_ID'	=> (int) $topic_info['answer_post_id'],
 
 			'S_FIRST_POST'	=> $topic_info['topic_first_post_id'] == $row['post_id'] ? true : false,
