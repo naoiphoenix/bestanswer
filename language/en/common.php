@@ -55,4 +55,7 @@ $lang = array_merge($lang, array(
 
 	'UNMARK_ANSWER'			=> 'Unmark answer',
 	'UNMARK_ANSWER_CONFIRM'	=> 'Are you sure you want to unmark this post as the best answer?',
+		
+	'BUTTON_MARK'	=> 'best answer',
+	'BUTTON_UNMARK'	=> 'Unmark best answer',
 ));
