@@ -1,5 +1,4 @@
 <?php
-
 /**
  *
  * Best Answer extension for the phpBB Forum Software package.
