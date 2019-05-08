@@ -61,6 +61,6 @@ $lang = array_merge($lang, array(
 	'NOTIFICATION_TYPE_MARK_ANSWER'		=> 'Someone marks your topic reply as the best answer',
 	'NOTIFICATION_TYPE_UNMARK_ANSWER'	=> 'Someone unmarks your topic reply as the best answer',
 
-	'BUTTON_MARK'	=> 'Mark best answer',
-	'BUTTON_UNMARK'	=> 'Unmark best answer',
+	'BUTTON_MARK'	=> 'Mark answer',
+	'BUTTON_UNMARK'	=> 'Unmark answer',
 ));
