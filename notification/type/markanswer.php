@@ -1,10 +1,9 @@
 <?php
-
 /**
  *
- * Best Answer. An extension for the phpBB Forum Software package.
+ * Best Answer extension for the phpBB Forum Software package.
  *
- * @copyright (c) 2017, kinerity, https://www.layer-3.org
+ * @copyright (c) 2018, kinerity, https://www.layer-3.org/
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */
@@ -15,9 +14,9 @@ use phpbb\config\config;
 use phpbb\notification\type\base;
 
 /**
- * phpBB Best Answer Notification class.
+ * phpBB Best Answer notification class
  */
-class notbestanswer extends base
+class markanswer extends base
 {
 	/**
 	 * @var config
@@ -52,7 +51,7 @@ class notbestanswer extends base
 	 */
 	public function get_type()
 	{
-		return 'kinerity.bestanswer.notification.type.notbestanswer';
+		return 'kinerity.bestanswer.notification.type.markanswer';
 	}
 
 	/**
@@ -62,7 +61,7 @@ class notbestanswer extends base
 	 * 					Array of data (including keys 'id', 'lang', and 'group')
 	 */
 	public static $notification_option = array(
-		'lang'	=> 'NOTIFICATION_TYPE_NOT_BEST_ANSWER',
+		'lang'	=> 'NOTIFICATION_TYPE_MARK_ANSWER',
 	);
 
 	/**
@@ -132,7 +131,7 @@ class notbestanswer extends base
 	 */
 	public function get_title()
 	{
-		return $this->language->lang('NOT_BEST_ANSWER_NOTIFICATION', $this->user_loader->get_username($this->notification_data['user_id'], 'no_profile'), $this->notification_data['topic_title']);
+		return $this->language->lang('MARK_ANSWER_NOTIFICATION', $this->user_loader->get_username($this->notification_data['user_id'], 'no_profile'), $this->notification_data['topic_title']);
 	}
 
 	/**
@@ -152,7 +151,7 @@ class notbestanswer extends base
 	 */
 	public function get_email_template()
 	{
-		return '@kinerity_bestanswer\unmark_mail';
+		return '@kinerity_bestanswer\mark_mail';
 	}
 
 	/**

@@ -77,7 +77,7 @@ class main_controller
 
 		// Query necessary topic data
 		$sql_arr = array(
-			'SELECT'	=> 'f.forum_id, f.enable_answer, p.post_id, p.topic_id, p.poster_id, p.post_subject, t.topic_id, t.forum_id, t.topic_poster, t.topic_status, t.topic_first_post_id, t.answer_post_id, t.answer_user_id, u.user_id, u.username, u.user_colour',
+			'SELECT'	=> 'f.forum_id, f.enable_answer, p.post_id, p.topic_id, p.poster_id, p.post_subject, t.topic_id, t.forum_id, t.topic_title, t.topic_poster, t.topic_status, t.topic_first_post_id, t.answer_post_id, t.answer_user_id, u.user_id, u.username, u.user_colour',
 
 			'FROM'		=> array(
 				FORUMS_TABLE	=> 'f',
@@ -138,8 +138,8 @@ class main_controller
 				$post_author = get_username_string('full', (int) $topic_data['user_id'], $topic_data['username'], $topic_data['user_colour']);
 				$this->log->add($log_var, (int) $this->user->data['user_id'], $this->user->data['user_ip'], 'LOG_UNMARK_ANSWER', time(), array($topic_data['post_subject'], $post_author));
 
-				$this->notification_manager->delete_notifications('kinerity.bestanswer.notification.type.notbestanswer', $post_id, $post_id, $topic_data['user_id']);
-				$this->notification_manager->add_notifications('kinerity.bestanswer.notification.type.notbestanswer', [
+				$this->notification_manager->delete_notifications('kinerity.bestanswer.notification.type.unmarkanswer', $post_id, $post_id, $topic_data['user_id']);
+				$this->notification_manager->add_notifications('kinerity.bestanswer.notification.type.unmarkanswer', [
 					'user_id'			=> $this->user->data['user_id'],
 					'user_ids'			=> array($topic_data['user_id']),
 					'username'			=> $this->user->data['username'],
@@ -194,8 +194,8 @@ class main_controller
 				$post_author = get_username_string('full', (int) $topic_data['user_id'], $topic_data['username'], $topic_data['user_colour']);
 				$this->log->add($log_var, (int) $this->user->data['user_id'], $this->user->data['user_ip'], 'LOG_MARK_ANSWER', time(), array($topic_data['post_subject'], $post_author));
 
-				$this->notification_manager->delete_notifications('kinerity.bestanswer.notification.type.bestanswer', $post_id, $post_id, $topic_data['user_id']);
-				$this->notification_manager->add_notifications('kinerity.bestanswer.notification.type.bestanswer', [
+				$this->notification_manager->delete_notifications('kinerity.bestanswer.notification.type.markanswer', $post_id, $post_id, $topic_data['user_id']);
+				$this->notification_manager->add_notifications('kinerity.bestanswer.notification.type.markanswer', [
 					'user_id'			=> $this->user->data['user_id'],
 					'user_ids'			=> array($topic_data['user_id']),
 					'username'			=> $this->user->data['username'],

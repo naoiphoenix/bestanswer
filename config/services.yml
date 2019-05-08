@@ -26,8 +26,8 @@ services:
         tags:
             - { name: event.listener }
 
-    kinerity.bestanswer.notification.type.bestanswer:
-        class: kinerity\bestanswer\notification\type\bestanswer
+    kinerity.bestanswer.notification.type.markanswer:
+        class: kinerity\bestanswer\notification\type\markanswer
         shared: false
         parent: notification.type.base
         calls:
@@ -36,8 +36,8 @@ services:
         tags:
             - { name: notification.type }
 
-    kinerity.bestanswer.notification.type.notbestanswer:
-        class: kinerity\bestanswer\notification\type\notbestanswer
+    kinerity.bestanswer.notification.type.unmarkanswer:
+        class: kinerity\bestanswer\notification\type\unmarkanswer
         shared: false
         parent: notification.type.base
         calls:
